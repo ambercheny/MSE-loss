@@ -1,0 +1,376 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MSE Interpreter</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #111827;
+      --muted: #5b6472;
+      --border: #d7dce3;
+      --accent: #2563eb;
+      --accent-dark: #1d4ed8;
+      --danger-bg: #fff1f2;
+      --danger-text: #9f1239;
+      --code-bg: #f3f4f6;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.5;
+    }
+
+    main {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 0 0 24px;
+      color: var(--muted);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(280px, 0.85fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    textarea,
+    input[type="number"] {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      color: var(--text);
+      background: #ffffff;
+      font: inherit;
+    }
+
+    textarea {
+      min-height: 116px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px;
+    }
+
+    .check-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin: 2px 0 16px;
+      color: var(--text);
+    }
+
+    .check-row input {
+      width: 18px;
+      height: 18px;
+      margin: 0;
+    }
+
+    button {
+      border: 0;
+      border-radius: 6px;
+      padding: 10px 14px;
+      color: #ffffff;
+      background: var(--accent);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: var(--accent-dark);
+    }
+
+    .hint {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .metrics {
+      display: grid;
+      gap: 10px;
+    }
+
+    .metric {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .metric:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .metric span:first-child {
+      color: var(--muted);
+    }
+
+    .metric span:last-child {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      text-align: right;
+    }
+
+    .interpretation {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 6px;
+      background: #eff6ff;
+      color: #1e3a8a;
+      font-weight: 700;
+    }
+
+    .error {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 6px;
+      background: var(--danger-bg);
+      color: var(--danger-text);
+      font-weight: 700;
+    }
+
+    pre {
+      overflow-x: auto;
+      margin: 16px 0 0;
+      padding: 12px;
+      border-radius: 6px;
+      background: var(--code-bg);
+      font-size: 13px;
+      white-space: pre-wrap;
+    }
+
+    @media (max-width: 760px) {
+      main {
+        padding: 22px 14px;
+      }
+
+      .layout,
+      .row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>MSE Interpreter</h1>
+    <p class="subtitle">Enter matching numeric arrays for observed labels and predictions.</p>
+
+    <div class="layout">
+      <section class="panel" aria-label="Inputs">
+        <div class="field">
+          <label for="yTrue">y true / labels</label>
+          <textarea id="yTrue">1, 2, 3, 4, 5</textarea>
+          <p class="hint">Comma, space, or newline separated numbers.</p>
+        </div>
+
+        <div class="field">
+          <label for="yPred">y prediction</label>
+          <textarea id="yPred">1.1, 1.9, 2.7, 4.2, 5.1</textarea>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="targetStd">target std</label>
+            <input id="targetStd" type="number" step="any" min="0" placeholder="optional">
+            <p class="hint">Used only when the values are on the original scale.</p>
+          </div>
+
+          <div class="field">
+            <label>&nbsp;</label>
+            <div class="check-row">
+              <input id="standardized" type="checkbox">
+              <span>Inputs are standardized</span>
+            </div>
+          </div>
+        </div>
+
+        <button id="calculate" type="button">Calculate</button>
+      </section>
+
+      <section class="panel" aria-label="Results">
+        <div id="results" class="metrics"></div>
+        <div id="message"></div>
+        <pre id="debug"></pre>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    function parseNumberList(text) {
+      return text
+        .split(/[\s,]+/)
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .map((value) => {
+          const number = Number(value);
+          if (!Number.isFinite(number)) {
+            throw new Error(`Invalid number: ${value}`);
+          }
+          return number;
+        });
+    }
+
+    function mean(values) {
+      return values.reduce((sum, value) => sum + value, 0) / values.length;
+    }
+
+    function formatNumber(value) {
+      if (Number.isNaN(value)) {
+        return "NaN";
+      }
+      return Number(value).toFixed(4);
+    }
+
+    function interpretMse(yTrue, yPred, targetStd = null, standardized = false) {
+      const squaredErrors = yTrue.map((value, index) => {
+        const error = yPred[index] - value;
+        return error ** 2;
+      });
+      const mse = mean(squaredErrors);
+      const rmse = Math.sqrt(mse);
+
+      const baselineValue = mean(yTrue);
+      const baselinePred = yTrue.map(() => baselineValue);
+      const baselineSquaredErrors = yTrue.map((value) => (baselineValue - value) ** 2);
+      const baselineMse = mean(baselineSquaredErrors);
+
+      const relativeMse = baselineMse !== 0 ? mse / baselineMse : NaN;
+      const r2 = baselineMse !== 0 ? 1 - relativeMse : NaN;
+
+      const result = {
+        mse,
+        rmse,
+        baseline_mse_mean_predictor: baselineMse,
+        relative_mse: relativeMse,
+        r2,
+        baseline_pred: baselinePred,
+      };
+
+      if (standardized) {
+        result.interpretation = `RMSE is about ${rmse.toFixed(3)} standard deviations.`;
+      } else if (targetStd !== null) {
+        result.rmse_in_std_units = rmse / targetStd;
+        result.interpretation =
+          `RMSE is ${rmse.toFixed(3)} original units, ` +
+          `or ${(rmse / targetStd).toFixed(3)} standard deviations.`;
+      }
+
+      return result;
+    }
+
+    function renderMetric(label, value) {
+      return `
+        <div class="metric">
+          <span>${label}</span>
+          <span>${formatNumber(value)}</span>
+        </div>
+      `;
+    }
+
+    function calculate() {
+      const results = document.getElementById("results");
+      const message = document.getElementById("message");
+      const debug = document.getElementById("debug");
+      results.innerHTML = "";
+      message.innerHTML = "";
+      debug.textContent = "";
+
+      try {
+        const yTrue = parseNumberList(document.getElementById("yTrue").value);
+        const yPred = parseNumberList(document.getElementById("yPred").value);
+        const standardized = document.getElementById("standardized").checked;
+        const targetStdInput = document.getElementById("targetStd").value.trim();
+        const targetStd = targetStdInput === "" ? null : Number(targetStdInput);
+
+        if (yTrue.length === 0 || yPred.length === 0) {
+          throw new Error("Both inputs need at least one number.");
+        }
+        if (yTrue.length !== yPred.length) {
+          throw new Error("y true and y prediction must have the same length.");
+        }
+        if (targetStd !== null && (!Number.isFinite(targetStd) || targetStd <= 0)) {
+          throw new Error("target std must be a positive number.");
+        }
+
+        const metrics = interpretMse(yTrue, yPred, targetStd, standardized);
+
+        results.innerHTML = [
+          renderMetric("MSE", metrics.mse),
+          renderMetric("RMSE", metrics.rmse),
+          renderMetric("Mean-baseline MSE", metrics.baseline_mse_mean_predictor),
+          renderMetric("Relative MSE", metrics.relative_mse),
+          renderMetric("R^2", metrics.r2),
+          metrics.rmse_in_std_units === undefined
+            ? ""
+            : renderMetric("RMSE in std units", metrics.rmse_in_std_units),
+        ].join("");
+
+        if (metrics.interpretation) {
+          message.innerHTML = `<div class="interpretation">${metrics.interpretation}</div>`;
+        }
+
+        debug.textContent = [
+          `standardized: ${standardized}`,
+          `y_true: [${yTrue.join(", ")}]`,
+          `y_pred: [${yPred.join(", ")}]`,
+          `baseline_pred: [${metrics.baseline_pred.map((value) => formatNumber(value)).join(", ")}]`,
+          `baseline_mse: ${formatNumber(metrics.baseline_mse_mean_predictor)}`,
+        ].join("\n");
+      } catch (error) {
+        message.innerHTML = `<div class="error">${error.message}</div>`;
+      }
+    }
+
+    document.getElementById("calculate").addEventListener("click", calculate);
+    calculate();
+  </script>
+</body>
+</html>
