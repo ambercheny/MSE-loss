@@ -227,7 +227,7 @@
             <label>&nbsp;</label>
             <div class="check-row">
               <input id="standardized" type="checkbox">
-              <span>Inputs are standardized</span>
+              <span>Check if y labels are standardized</span>
             </div>
           </div>
         </div>
@@ -345,8 +345,7 @@
         results.innerHTML = [
           renderMetric("MSE", metrics.mse),
           renderMetric("RMSE", metrics.rmse),
-          renderMetric("Mean-baseline MSE", metrics.baseline_mse_mean_predictor),
-          renderMetric("Relative MSE", metrics.relative_mse),
+          renderMetric("Mean-baseline MSE (random guess)", metrics.baseline_mse_mean_predictor),
           renderMetric("R^2", metrics.r2),
           metrics.rmse_in_std_units === undefined
             ? ""
